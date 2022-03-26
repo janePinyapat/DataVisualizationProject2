@@ -1,0 +1,190 @@
+---
+title: "Assignment 2"
+author: "Pinyapat Manasboonpermpool"
+date: "`r format(Sys.Date(),'%d %B %Y')`"
+papersize: a4
+geometry: margin=4cm
+colorlinks: true
+output: 
+  pdf_document:
+    number_sections: true
+---
+
+```{r setup, include = FALSE}
+# Setup options for R Markdown
+knitr::opts_chunk$set(
+  echo       = FALSE,    # Do not print code
+  warning    = FALSE,    # Suppress warnings
+  message    = FALSE,    # Suppress messages
+  fig.align  = "center", # Center figures
+  fig.width  = 2.7,      # Good standard figure width for single-panel figures
+  fig.height = 2.4       # Good standard figure height for single-panel figures
+)
+
+library(tidyverse)
+
+# Set a theme for ggplot2
+theme_set(theme_grey(base_size = 10))
+
+# Set options
+options(
+  digits = 3, # limit the number of significant digits
+  width  = 63 # limit the width of code output
+)
+```
+
+**Introduction**
+
+The purpose of the assignment 2 is to the demonstrate the skills using the programming tools of Grammar of Graphics and ggplot2 so that one can properly create data visualization based on the specific data set for further analysis. 
+
+
+# Task 1
+
+In Task 1, we begin to transfer in the data set from the *UCI Machine Learning Repository* which locates the data set we are interested in exploring and learning more about. This selected data set is related to a specific species of abalones gathered the information in the Bass Straight off the coast of Tasmania. 
+
+To begin with, we first load the package of *tidyverse* where there are many core applications within the package that we will be using throughout the tasks of this assignment. Then, we use the function paste0() to locate the website where the data set is located. Once we have included the website of data set into our environment. We then can name the target variable as *abalone_raw*. 
+
+
+```{r echo = TRUE}
+library(tidyverse)
+
+url <- paste0(
+  "https://archive.ics.uci.edu/",
+  "ml/machine-learning-databases/abalone/abalone.data"
+)
+abalone_raw <- read_csv(url, col_names = FALSE)
+```
+\newpage
+
+Before analyzing further on the collected data, we spend sometimes to get a glimpse of understanding about the selected variable of the *abalone_raw*. We can use the function glimse() to lay out all the variables and guide us more about all the types of observations in general. 
+
+```{r}
+glimpse(abalone_raw)
+```
+As shown on the above, one can realize that there are *missing* variable names due to that we have set col_names = FALSE in the beginning which we will later name the columns. However, to explore more about the information, we can visit the website at *https://archive.ics.uci.edu/ml/datasets/Abalone* where there are more details about this specific data set of our variable.
+
+Based on the data description, the study was held in the North Coast of Islands of Bass Strait in Tasmania, Australia. This data set was collected in 1994 and donated in 1995 for the purpose of the biological study to predict the age of abalone from physical measurements. 
+The data collection consists of 9 variables and 4177 observations in total. 
+
+The nine variables are classified as *Sex* which holds its observations in nominal type for Male (M), Female(F) and Infant (I), *Length* which holds its observation in continuous length of millimeters unit in shell measurement, *Diameter* which similarly holds its observations in continuous type of millimeters unit for perpendicular to length, *Height* where its observations are in continuous type in millimeters unit including the meat in shell, *Whole weight* which are also in continuous type in grams to indicate the whole abalone, *Shucked weight* which holds in continuous type in gram to specify the weight of meat, *Viscera weight* which holds its observations in continuous type in grams for the gut weight after bleeding, *Shell weight* which holds its observations in continuous type in grams after their deaths, and lastly *Rings* which are the integers indicating the age in years. 
+
+\newpage
+
+Table: The nine attributes information of abalone data set. 
+
+| Name     | Type | Measurement  | Description |
+| :---     |   :---  |          :--- | :--- |
+| Sex     |    nominal    | --   | M (males), F (female) and I (infant) |
+| Length  |    continuous    | millimeters   | longest shell measurement |
+| Diameter  |    continuous    | millimeters   | perpendicular to length|
+| Height  |    continuous    | millimeters   | with meat in shell|
+| Whole Weight  |    continuous    | grams   | whole abalone|
+| Shucked Weight  |    continuous    | grams   | weight of meat|
+| Viscera Weight  |    continuous    | grams   | fut weight (after bleeding)|
+| Shell Weight  |    continuous    | grams   | after being dried|
+| Rings |   integer   | --  | +1.5 gives the ages in years|
+
+Based on the raw data provided, one should be noted that all the numeric continuous values have been scaled previously for the use of the study with an Artificial neural network. These collected numeric, continuous observations have been divided by 200 as presented in their values in *abalone_raw*. These are considered non-standard variables where the formatting is needed in the next steps.
+
+\newpage
+
+# Task 2
+
+In Task 2, we begin to name all the variables in the columns associated with their observations. Therefore, we name the nine variables as *Sex*, *Length*,*Diameter*, *Height*, *WholeWeight*, *ShuckedWeight*, *VisceraWeight*, *ShellWeight*, *Rings*. The following step is to format our observations.
+
+
+By using the function sapply(), one can notice there are two variables that are inappropriate in their class which are *Sex* being classified as *character* and *Rings* being classified as *numeric*.
+
+
+
+```{r}
+sapply(abalone_raw, class)   
+
+```
+Therefore, to follow the descriptions of the data set, we need to change *Sex* to a factor class by using as.factor() and *Rings* to be an integer class using as.integer(). Following with all the other variables with numeric class, we will keep them as they are. 
+
+Apart from this, we also need transform the observations to the original scale by multiplying 200 on all the numeric values.
+
+```{r, echo = FALSE}
+abalone <-
+  abalone_raw %>%
+  rename(Sex = X1, Length = X2, Diameter = X3, Height = X4, 
+         WholeWeight = X5, ShuckedWeight = X6, VisceraWeight = X7, ShellWeight = X8, Rings = X9) %>%
+  mutate(Sex = as.factor(Sex), 
+         Length = Length * 200,
+         Diameter = Diameter * 200, 
+         Height = Height * 200, 
+         WholeWeight = WholeWeight * 200,
+         ShuckedWeight = ShuckedWeight * 200,
+         VisceraWeight = VisceraWeight * 200,
+         ShellWeight = ShellWeight * 200,
+         Rings = as.integer(Rings))
+```
+
+After formatting the data set, we are interested to plot the three variables of *Length*, *Diameter*, *Height*. To do so, we first need to use the function of pivot_longer() to roll out the observations of all of the three variables as one column of values. 
+
+Since we have combined the column of the three variables, the plot can be presented. In Task 2, the recommended plots to be used are a box plot and a violin plot. However, we are asked select only one type of the plots to present the data.
+The data visualization in violin plot seems to illustrate the values of each variable more effectively in terms of displaying the density where the most of data are located. In other words, we select a violin plot as it is more informative than a box plot displaying the full distribution of the data. 
+
+With all these being mentioned, we would select the ggplot with geom_violin for the presentation of our data (see Figure 1). 
+
+
+
+```{r plot1, fig.cap = "The distribution set of the abalone dimensions by milimeters", fig.width = 5, fig.height = 2.7}
+
+abalone_long <-
+  abalone %>%
+  pivot_longer(c("Length", "Diameter", "Height"),
+               names_to = "variables",
+               values_to = "values") 
+
+#ggplot(abalone_long, aes(x = variables, y = values)) +
+  #geom_boxplot()
+
+
+ggplot(abalone_long, aes(x = variables, y = values, color=variables)) +
+  geom_violin() +
+  xlab("abalone dimensions") +
+  ylab("milimeter")
+
+
+```
+
+
+\newpage 
+
+Next, we will begin to produce faceted histogram plots for the three variables. After experiencing different settings in faceted histograms, we can conclude that the ideal histogram to present should be set at the bin width of 10 due to its proper fit into the columns of bars that are not too wide or too narrow to generate any biases. Then, we pick a reasonable setting for the scales argument by using *free_x* to not constraint the values in x-values in which overall illustrates the flexibility on the data to customize against the Y-axis more reasonably on the histograms. Therefore, the histogram set is laid out in three different variables demonstrating the distribution of abalones' dimensions by values (Figure 2)
+
+
+```{r plot2, fig.cap = "The histogram set of abalone dimensions by milimeters", fig.width = 5, fig.height = 2.7}
+
+ggplot(abalone_long, aes(values)) +
+  geom_histogram(binwidth = 10, alpha = .2, col = I("blue"), fill = I("red")) +
+  xlab("milimeter") +
+  facet_wrap("variables", scales = "free_x")
+```
+
+\newpage
+
+
+# Task 3
+
+
+In Task 3, we begin to experience the use of the Grammar of Graphics by analyzing the plot which is provided and displayed in the below (Figure 3)
+
+```{r plot3, fig.cap = "The scatter plots of abalone dimensions by sex types"}
+knitr::include_graphics("assignment2-abalone-plot-1.png")
+```
+The constructed picture plot have several features of the Grammar of Graphics covering layers, scales, and a coordinate system. 
+
+First, one can explain about the layers being implemented as the first hierarchical order. In general, the layers of the plot are responsible for creating the objects that we perceive on the plot. As we notice, the layers consist of the data of *abalone* linking to aesthetic mapping to indicate the X-axis and Y-axis. The X-axis is displayed with the selected variable *Rings* and the Y-axis with the selected variable *Diameter* in millimeters. Furthermore, the picture plot has selected *Sex* as the main legend showing in distinctive colors. Inside the canvas, the plots are filled and scattered which these plots can be set by using the geom_point() function. In addition, the density of the data points can also be shown by using the opacity as if when they are more transparent meaning that the opacity has been controlled by using the alpha setting in the geom_point. As shown on the above, the picture plot has applied the opacity to paint out more transparent data points to identify the level of density. 
+
+Further feature to be mentioned is the position using jittering points. The jittering points are set to avoid too much overlapping between each plot due to that we have one type of integer variables of *Rings* and the continuous type of *Diameter*. The function of position_jitter() allows the data points to be uniquely separated as much as possible. 
+
+Next steps are the scale and the guide, the overall plot consists of the numeric continuous and discrete variables. Therefore, the scale is set to control the variables when mapping to the aesthetics, this also includes the colors being used in the legend, while we have the guides feature where we indicate how to read the scale. Which in this case, the guides should be set as scale_y_continuous() for the y values of *Diameter* and scale_x_ discrete() for the x values of *Number of Rings*, including the color divisions of *Sex*. The last feature to describe is the coordinate system or *coord* where it is set to control the position of object on the plot. Which in this case, the Cartesian type is the selected type of *coord* due to that we have our data plots specified each point uniquely by a pair of numerical coordinates supported by the legend of *Sex*. 
+
+In the picture plot, it reveals that among the three types of *Sex*, the number of rings and the length of diameter of infant abalones contain fewer rings and less length. While the male and female abalones reveal higher number of rings and the length of diameters. Therefore, this indicates the relation of age to the numbers of rings and the diameter lengths. 
+
+**Conclusion**
+
+Overall, this assignment consisting of the three main tasks allow us to practice on using the data visualizing tools from the popular techniques of the Grammar of Graphics and the ggplot2 with the one specific data set *abalone* creatures. We now can conclude that we have learned how to understand and format the data before using, experience the differences of the plot types and are able to make a decision on which type of plot we should present for which type of data, as well as to understand how one plot is constructed and what features perform in what ways of results. With all these obtained knowledge, we can further employ the skills for deeper analysis of data later on. 
